@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор калорий — SigmaGuide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    background: #0f0f12;
+    color: #f5f5f7;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  .container { max-width: 480px; margin: 0 auto; }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #fff;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: #1a1a1f;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 14px;
+    border: 1px solid #26262e;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  input, select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    background: #0f0f12;
+    border: 1px solid #33333d;
+    border-radius: 10px;
+    color: #fff;
+    outline: none;
+    transition: border 0.2s;
+    font-family: inherit;
+  }
+  input:focus, select:focus { border-color: #a855f7; }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .full { margin-bottom: 12px; }
+  button {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 8px;
+    font-family: inherit;
+    transition: transform 0.1s;
+  }
+  button:active { transform: scale(0.98); }
+  .result {
+    display: none;
+    margin-top: 20px;
+  }
+  .result.active { display: block; }
+  .result-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #fff;
+  }
+  .goal {
+    background: #1a1a1f;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid #a855f7;
+  }
+  .goal.lose { border-left-color: #22c55e; }
+  .goal.gain { border-left-color: #f59e0b; }
+  .goal h3 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #9ca3af;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .kcal {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+  .kcal span { font-size: 14px; color: #9ca3af; font-weight: 400; }
+  .macros {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .macro {
+    background: #0f0f12;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+  }
+  .macro-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+  .macro-label {
+    font-size: 11px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .note {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 16px;
+    line-height: 1.5;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧮 Калькулятор калорий</h1>
+  <p class="subtitle">Введи данные — получи свою норму и БЖУ</p>
+
+  <div class="card">
+    <div class="full">
+      <label>Пол</label>
+      <select id="gender">
+        <option value="male">Мужчина</option>
+        <option value="female">Женщина</option>
+      </select>
+    </div>
+    <div class="row">
+      <div>
+        <label>Возраст (лет)</label>
+        <input type="number" id="age" placeholder="30" value="30">
+      </div>
+      <div>
+        <label>Рост (см)</label>
+        <input type="number" id="height" placeholder="175" value="175">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Вес (кг)</label>
+        <input type="number" id="weight" placeholder="70" value="70">
+      </div>
+      <div>
+        <label>Активность</label>
+        <select id="activity">
+          <option value="1.2">Сидячая</option>
+          <option value="1.375" selected>Лёгкая (1–3 трен.)</option>
+          <option value="1.55">Средняя (3–5 трен.)</option>
+          <option value="1.725">Высокая (6–7 трен.)</option>
+          <option value="1.9">Очень высокая</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="calculate()">Рассчитать</button>
+  </div>
+
+  <div class="result" id="result">
+    <p class="result-title">Твои нормы:</p>
+
+    <div class="goal">
+      <h3>Поддержание веса</h3>
+      <div class="kcal" id="maintainKcal">— <span>ккал</span></div>
+      <div class="macros">
+        <div class="macro"><div class="macro-value" id="maintainP">—</div><div class="macro-label">Белки</div></div>
+        <div class="macro"><div class="macro-value" id="maintainF">—</div><div class="macro-label">Жиры</div></div>
+        <div class="macro"><div class="macro-value" id="maintainC">—</div><div class="macro-label">Углев.</div></div>
+      </div>
+    </div>
+
+    <div class="goal lose">
+      <h3>Похудение (−15%)</h3>
+      <div class="kcal" id="loseKcal">— <span>ккал</span></div>
+      <div class="macros">
+        <div class="macro"><div class="macro-value" id="loseP">—</div><div class="macro-label">Белки</div></div>
+        <div class="macro"><div class="macro-value" id="loseF">—</div><div class="macro-label">Жиры</div></div>
+        <div class="macro"><div class="macro-value" id="loseC">—</div><div class="macro-label">Углев.</div></div>
+      </div>
+    </div>
+
+    <div class="goal gain">
+      <h3>Набор массы (+10%)</h3>
+      <div class="kcal" id="gainKcal">— <span>ккал</span></div>
+      <div class="macros">
+        <div class="macro"><div class="macro-value" id="gainP">—</div><div class="macro-label">Белки</div></div>
+        <div class="macro"><div class="macro-value" id="gainF">—</div><div class="macro-label">Жиры</div></div>
+        <div class="macro"><div class="macro-value" id="gainC">—</div><div class="macro-label">Углев.</div></div>
+      </div>
+    </div>
+
+    <p class="note">Расчёт по формуле Миффлина–Сан Жеора.<br>Белок — 2 г/кг, жиры — 1 г/кг, углеводы — остаток.</p>
+  </div>
+</div>
+
+<script>
+function calculate() {
+  const gender = document.getElementById('gender').value;
+  const age = parseFloat(document.getElementById('age').value);
+  const height = parseFloat(document.getElementById('height').value);
+  const weight = parseFloat(document.getElementById('weight').value);
+  const activity = parseFloat(document.getElementById('activity').value);
+
+  if (!age || !height || !weight) {
+    alert('Заполни все поля');
+    return;
+  }
+
+  // Формула Миффлина–Сан Жеора
+  let bmr;
+  if (gender === 'male') {
+    bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+  } else {
+    bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+  }
+
+  const maintain = Math.round(bmr * activity);
+  const lose = Math.round(maintain * 0.85);
+  const gain = Math.round(maintain * 1.10);
+
+  function macros(kcal) {
+    const protein = Math.round(weight * 2);
+    const fat = Math.round(weight * 1);
+    const proteinKcal = protein * 4;
+    const fatKcal = fat * 9;
+    const carbs = Math.round((kcal - proteinKcal - fatKcal) / 4);
+    return { protein, fat, carbs: Math.max(carbs, 0) };
+  }
+
+  const mMaintain = macros(maintain);
+  const mLose = macros(lose);
+  const mGain = macros(gain);
+
+  document.getElementById('maintainKcal').innerHTML = maintain + ' <span>ккал</span>';
+  document.getElementById('maintainP').textContent = mMaintain.protein + ' г';
+  document.getElementById('maintainF').textContent = mMaintain.fat + ' г';
+  document.getElementById('maintainC').textContent = mMaintain.carbs + ' г';
+
+  document.getElementById('loseKcal').innerHTML = lose + ' <span>ккал</span>';
+  document.getElementById('loseP').textContent = mLose.protein + ' г';
+  document.getElementById('loseF').textContent = mLose.fat + ' г';
+  document.getElementById('loseC').textContent = mLose.carbs + ' г';
+
+  document.getElementById('gainKcal').innerHTML = gain + ' <span>ккал</span>';
+  document.getElementById('gainP').textContent = mGain.protein + ' г';
+  document.getElementById('gainF').textContent = mGain.fat + ' г';
+  document.getElementById('gainC').textContent = mGain.carbs + ' г';
+
+  document.getElementById('result').classList.add('active');
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
