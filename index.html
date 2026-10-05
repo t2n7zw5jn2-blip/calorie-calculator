@@ -299,6 +299,7 @@ function calculate() {
     return;
   }
 
+  // Формула Миффлина–Сан Жеора
   let bmr;
   if (gender === 'male') {
     bmr = 10 * weight + 6.25 * height - 5 * age + 5;
@@ -310,18 +311,48 @@ function calculate() {
   const lose = Math.round(maintain * 0.85);
   const gain = Math.round(maintain * 1.10);
 
-  function macros(kcal) {
-    const protein = Math.round(weight * 2);
-    const fat = Math.round(weight * 1);
+  // Новая логика макросов: жиры зависят от пола
+  function macros(kcal, gender, weight, goal) {
+    // Белок: 1.8 для поддержки, 2.2 для похудения, 1.8 для набора
+    let proteinPerKg = 1.8;
+    if (goal === 'lose') proteinPerKg = 2.2;
+    if (goal === 'gain') proteinPerKg = 1.8;
+
+    const protein = Math.round(weight * proteinPerKg);
+
+    // Жиры: 1.0 для мужчин, 0.8 для женщин
+    const fatPerKg = gender === 'female' ? 0.8 : 1.0;
+    const fat = Math.round(weight * fatPerKg);
+
     const proteinKcal = protein * 4;
     const fatKcal = fat * 9;
-    const carbs = Math.round((kcal - proteinKcal - fatKcal) / 4);
+    
+    // Углеводы: остаток калорий
+    let carbs = Math.round((kcal - proteinKcal - fatKcal) / 4);
+
+    // Защита: если углеводов слишком мало (меньше 2 г/кг), 
+    // уменьшаем жиры и пересчитываем
+    const minCarbs = weight * 2;
+    if (carbs < minCarbs) {
+      // Пересчитываем жиры так, чтобы углеводов стало хотя бы 2 г/кг
+      const fatKcalAvailable = kcal - proteinKcal - (minCarbs * 4);
+      const newFat = Math.max(0.5, Math.round((fatKcalAvailable / 9)));
+      // Если даже при минимальном жире не хватает, оставляем минимум
+      if (newFat * 9 + proteinKcal + minCarbs * 4 <= kcal) {
+        // Если можно уложиться, корректируем
+        const adjustedFat = Math.round((kcal - proteinKcal - (minCarbs * 4)) / 9);
+        const adjustedCarbs = Math.round((kcal - proteinKcal - (adjustedFat * 9)) / 4);
+        return { protein, fat: adjustedFat, carbs: Math.max(adjustedCarbs, 0) };
+      }
+    }
+
     return { protein, fat, carbs: Math.max(carbs, 0) };
   }
 
-  const mMaintain = macros(maintain);
-  const mLose = macros(lose);
-  const mGain = macros(gain);
+  // Передаем goal в функцию
+  const mMaintain = macros(maintain, gender, weight, 'maintain');
+  const mLose = macros(lose, gender, weight, 'lose');
+  const mGain = macros(gain, gender, weight, 'gain');
 
   document.getElementById('maintainKcal').innerHTML = maintain + ' <span>ккал</span>';
   document.getElementById('maintainP').textContent = mMaintain.protein + ' г';
